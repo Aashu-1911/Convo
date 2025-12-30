@@ -5,12 +5,13 @@ import { protectRoute } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 router.post("/signup", signup)
-
 router.post("/login", login)
-
 router.post("/logout", logout)
 
 router.post("/onboarding",protectRoute, onboard);
+
+// forget password route can be added here
+// reset password route can be added here
 
 router.get("/me", protectRoute, (req, res) =>{
     res.status(200).json({success: true,user: req.user});
