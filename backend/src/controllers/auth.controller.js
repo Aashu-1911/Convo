@@ -2,6 +2,9 @@ import { upsertStreamUser } from "../db/stream.js";
 import User from "../models/User.model.js";
 import jwt from "jsonwebtoken"
 
+
+
+
 export async function signup(req, res){
     const {email, password, fullName} =req.body
 
