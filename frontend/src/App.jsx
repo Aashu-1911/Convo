@@ -1,5 +1,5 @@
 // import React, { use, useEffect, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import HomePage from './pages/HomePage.jsx' 
 import SignupPage from './pages/SignupPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -33,8 +33,8 @@ const App = () => {
   // }, []);
 
   //Tanstack Query
-  const {data, isLoading, error} = useQuery({
-    queryKey:["todos"],
+  const {data:authData, isLoading, error} = useQuery({
+    queryKey:["authUser"],
     queryFn: async() =>{
       const res = await axiosInstance.get('https://localhost:5001/api/auth/me');
       // const data = await res.json();
@@ -43,19 +43,19 @@ const App = () => {
     retry: false,
   });
 
-  console.log({data, isLoading, error});
+  const authUser = authData?.user;
 
   return (
     <div className=' h-screen' data-theme="forest">
       <button onClick={() => toast.success('This is a toast!')}>Create a toast</button>
       <Routes>
-        <Route path="/" element={<HomePage />}/>
-        <Route path="signup" element={<SignupPage />} />
-        <Route path="login" element={<LoginPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="onboarding" element={<OnboardingPage />} />
-        <Route path="chat" element={<ChatPage />} />
-        <Route path="call" element={<CallPage />} />
+        <Route path="/" element={authUser ? <HomePage /> : <Navigate to ="/login"/>}/>
+        <Route path="signup" element={!authUser ? <SignupPage /> : <Navigate to ="/"/>} />
+        <Route path="login" element={!authUser ? <LoginPage /> : <Navigate to ="/"/>} />
+        <Route path="notifications" element={authUser ? <NotificationsPage /> : <Navigate to ="/login"/>} />
+        <Route path="onboarding" element={authUser ? <OnboardingPage /> : <Navigate to ="/login"/>} />
+        <Route path="chat" element={authUser ? <ChatPage /> : <Navigate to ="/login"/>} />
+        <Route path="call" element={authUser ? <CallPage /> : <Navigate to ="/login"/>} />
       </Routes>
 
       <Toaster />

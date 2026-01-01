@@ -1,11 +1,20 @@
 import React from 'react'
+import {useState} from 'react';
 
 const SignupPage = () => {
-  return (
-    <div>
-      
-    </div>
-  )
+  const [signupData, setSignupData] = useState({
+    fullName:"",
+    email:"",
+    password:""
+  });
+
+  const handleSignup = (e) =>{
+    e.preventDefault()
+  }
+
+  return <div>
+    
+  </div>
 }
 
 export default SignupPage
