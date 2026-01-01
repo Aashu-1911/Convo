@@ -13,6 +13,9 @@ import axios from 'axios'
 import { axiosInstance } from './lib/axios.js'
 
 const App = () => {
+  // DEV MODE: Set to true to bypass authentication and view pages
+  const DEV_MODE = false;
+  
   // const [data, setData] = React.useState(null);
   // const [isLoading, setIsLoading] = React.useState(true);
   // const [error, setError] = React.useState(null);
@@ -41,13 +44,14 @@ const App = () => {
       return res.data;
     },
     retry: false,
+    enabled: !DEV_MODE, // Disable auth check in dev mode
   });
 
-  const authUser = authData?.user;
+  const authUser = DEV_MODE ? { name: "Dev User" } : authData?.user;
 
   return (
     <div className=' h-screen' data-theme="forest">
-      <button onClick={() => toast.success('This is a toast!')}>Create a toast</button>
+      {/* <button onClick={() => toast.success('This is a toast!')}>Create a toast</button> */}
       <Routes>
         <Route path="/" element={authUser ? <HomePage /> : <Navigate to ="/login"/>}/>
         <Route path="signup" element={!authUser ? <SignupPage /> : <Navigate to ="/"/>} />
