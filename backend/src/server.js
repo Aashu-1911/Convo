@@ -1,6 +1,7 @@
 import express from "express"
 import "dotenv/config" ;
 import cookieparser from "cookie-parser";
+import cors from  "cors";
 
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
@@ -12,6 +13,11 @@ import { protectRoute } from "./middleware/auth.middleware.js";
 
 const app = express();
 const PORT = process.env.PORT
+
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true,//allow cookies to be sent
+}))
 
 // app.get("/api/auth/signup", (req, res) => {
 //     res.send("Signup route!")

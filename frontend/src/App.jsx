@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from 'react'
+// import React, { use, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import HomePage from './pages/HomePage.jsx' 
 import SignupPage from './pages/SignupPage.jsx'
@@ -10,6 +10,7 @@ import CallPage from './pages/CallPage.jsx'
 import toast, { Toaster } from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
+import { axiosInstance } from './lib/axios.js'
 
 const App = () => {
   // const [data, setData] = React.useState(null);
@@ -35,11 +36,11 @@ const App = () => {
   const {data, isLoading, error} = useQuery({
     queryKey:["todos"],
     queryFn: async() =>{
-      const res = await axios.get('https://jsonplaceholder.typicode.com/todos');
+      const res = await axiosInstance.get('https://localhost:5001/api/auth/me');
       // const data = await res.json();
       return res.data;
-    }
-
+    },
+    retry: false,
   });
 
   console.log({data, isLoading, error});
