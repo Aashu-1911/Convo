@@ -1,16 +1,40 @@
 import React from 'react'
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [loginData, setLoginData] = useState({
     email: "",
     password: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Add login logic here
+    
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post('/auth/login', loginData);
+      
+      if (response.data.success) {
+        toast.success('Login successful!');
+        
+        // Check if user needs to complete onboarding
+        if (!response.data.user.isOnboarded) {
+          navigate('/onboarding');
+        } else {
+          navigate('/');
+        }
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleInputChange = (e) => {
@@ -72,9 +96,10 @@ const LoginPage = () => {
             {/* Submit Button */}
             <button
               type='submit'
-              className='w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors duration-200 mb-4'
+              disabled={isLoading}
+              className='w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-700 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors duration-200 mb-4'
             >
-              Sign In
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
 
             {/* Create Account Link */}

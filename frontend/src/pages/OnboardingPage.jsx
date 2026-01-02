@@ -1,9 +1,12 @@
 import React from 'react'
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
     fullName: '',
@@ -35,10 +38,38 @@ const OnboardingPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add onboarding completion logic here
-    navigate('/');
+    
+    setIsLoading(true);
+    try {
+      // Map frontend data to backend expected format
+      const onboardingData = {
+        fullName: profileData.fullName,
+        bio: profileData.bio,
+        nativeLanguage: profileData.nativeLanguage,
+        learningLanguages: [profileData.learningLanguage], // Backend expects array
+        location: profileData.location,
+        profilePic: profileData.avatar
+      };
+
+      const response = await axiosInstance.post('/auth/onboarding', onboardingData);
+      
+      if (response.data.success) {
+        toast.success('Profile completed successfully!');
+        navigate('/');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to complete onboarding. Please try again.';
+      toast.error(errorMessage);
+      
+      // Show specific missing fields if provided
+      if (error.response?.data?.missingFields) {
+        console.error('Missing fields:', error.response.data.missingFields);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -157,12 +188,13 @@ const OnboardingPage = () => {
           {/* Submit Button */}
           <button
             type='submit'
-            className='w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2'
+            disabled={isLoading}
+            className='w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-700 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2'
           >
             <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
               <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/>
             </svg>
-            Complete Onboarding
+            {isLoading ? 'Completing...' : 'Complete Onboarding'}
           </button>
         </form>
       </div>
