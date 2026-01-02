@@ -32,7 +32,7 @@ const LoginPage = () => {
               <svg className='w-8 h-8 text-emerald-500' fill='currentColor' viewBox='0 0 24 24'>
                 <path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/>
               </svg>
-              <h1 className='text-2xl font-bold text-emerald-500'>Streamify</h1>
+              <h1 className='text-2xl font-bold text-emerald-500'>Convo</h1>
             </div>
             
             <h2 className='text-3xl font-bold mb-2'>Welcome Back</h2>

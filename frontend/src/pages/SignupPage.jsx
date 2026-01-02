@@ -1,8 +1,11 @@
 import React from 'react'
 import {useState} from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 const SignupPage = () => {
+  const navigate = useNavigate();
   const [signupData, setSignupData] = useState({
     fullName:"",
     email:"",
@@ -10,10 +13,30 @@ const SignupPage = () => {
   });
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = (e) =>{
+  const handleSignup = async (e) =>{
     e.preventDefault()
-    // Add signup logic here
+    
+    if (!agreedToTerms) {
+      toast.error('Please agree to the terms and conditions');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post('/auth/signup', signupData);
+      
+      if (response.data.success) {
+        toast.success('Account created successfully!');
+        navigate('/onboarding');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleInputChange = (e) => {
@@ -35,7 +58,7 @@ const SignupPage = () => {
               <svg className='w-8 h-8 text-emerald-500' fill='currentColor' viewBox='0 0 24 24'>
                 <path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/>
               </svg>
-              <h1 className='text-2xl font-bold text-emerald-500'>Streamify</h1>
+              <h1 className='text-2xl font-bold text-emerald-500'>Convo</h1>
             </div>
             
             <h2 className='text-3xl font-bold mb-2'>Create an Account</h2>
@@ -109,9 +132,10 @@ const SignupPage = () => {
             {/* Submit Button */}
             <button
               type='submit'
-              className='w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors duration-200 mb-4'
+              disabled={isLoading}
+              className='w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors duration-200 mb-4 disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
 
             {/* Sign In Link */}
