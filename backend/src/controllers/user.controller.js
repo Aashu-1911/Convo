@@ -67,6 +67,15 @@ export async function sendFriendRequest(req, res){
             recipient: recipientId,
         });
         
+        await friendRequest.save();
+        
+        console.log('Friend request saved:', {
+            _id: friendRequest._id,
+            sender: myId,
+            recipient: recipientId,
+            status: friendRequest.status
+        });
+        
         res.status(201).json({message: "Friend request sent successfully."});
     }
     catch(error){
@@ -108,15 +117,22 @@ export async function acceptFriendRequest(req, res){
 
 export async function getFriendRequests(req, res){
     try {
+        console.log('Getting friend requests for user:', req.user.id);
+        
         const incomingRequests = await FriendRequest.find({
             recipient: req.user.id,
             status: "pending"
         }).populate("sender", "fullName profilePic nativeLanguage learningLanguages");
 
+        console.log('Incoming requests found:', incomingRequests.length);
+        console.log('Incoming requests:', incomingRequests);
+
         const acceptedRequests = await FriendRequest.find({
             sender: req.user.id,
             status: "accepted"
         }).populate("recipient", "fullName profilePic ");
+
+        console.log('Accepted requests found:', acceptedRequests.length);
 
         res.status(200).json({incomingRequests, acceptedRequests});
     } catch (error) {

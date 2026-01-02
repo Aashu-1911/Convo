@@ -3,14 +3,17 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [friendRequests, setFriendRequests] = useState([]);
   const [acceptedRequests, setAcceptedRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [acceptingRequest, setAcceptingRequest] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -24,9 +27,23 @@ const NotificationsPage = () => {
         axiosInstance.get('/users/friend-requests')
       ]);
 
-      setCurrentUser(userResponse.data.user);
+      const user = userResponse.data.user;
+      
+      // Check if user needs to complete onboarding
+      if (!user.isOnboarded) {
+        toast.error('Please complete your profile first');
+        navigate('/onboarding');
+        return;
+      }
+
+      setCurrentUser(user);
       setFriendRequests(requestsResponse.data.incomingRequests);
       setAcceptedRequests(requestsResponse.data.acceptedRequests);
+      
+      // Debug logs
+      console.log('Friend Requests Data:', requestsResponse.data);
+      console.log('Incoming Requests:', requestsResponse.data.incomingRequests);
+      console.log('Accepted Requests:', requestsResponse.data.acceptedRequests);
     } catch (error) {
       console.error('Error fetching data:', error);
       if (error.response?.status === 401) {
@@ -57,6 +74,8 @@ const NotificationsPage = () => {
   const handleLogout = async () => {
     try {
       await axiosInstance.post('/auth/logout');
+      // Clear the auth query cache
+      queryClient.setQueryData(['authUser'], null);
       toast.success('Logged out successfully');
       navigate('/login');
     } catch (error) {
@@ -156,7 +175,11 @@ const NotificationsPage = () => {
               <path d='M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z'/>
             </svg>
           </button>
-          <button className='p-1 hover:bg-gray-800 rounded-lg transition-colors'>
+          <button 
+            onClick={() => setShowProfileModal(true)}
+            className='p-1 hover:bg-gray-800 rounded-lg transition-colors'
+            title='View Profile'
+          >
             <img 
               src={currentUser.profilePic} 
               alt='Profile'
@@ -278,6 +301,93 @@ const NotificationsPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-gray-900 rounded-xl max-w-md w-full border border-gray-800'>
+            {/* Modal Header */}
+            <div className='flex items-center justify-between p-6 border-b border-gray-800'>
+              <h2 className='text-xl font-bold text-white'>My Profile</h2>
+              <button 
+                onClick={() => setShowProfileModal(false)}
+                className='p-2 hover:bg-gray-800 rounded-lg transition-colors'
+              >
+                <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
+                  <path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className='p-6'>
+              {/* Avatar */}
+              <div className='flex flex-col items-center mb-6'>
+                <img 
+                  src={currentUser.profilePic} 
+                  alt={currentUser.fullName}
+                  className='w-32 h-32 rounded-full mb-4'
+                />
+                <h3 className='text-2xl font-bold text-white'>{currentUser.fullName}</h3>
+                <p className='text-gray-400 text-sm'>{currentUser.email}</p>
+              </div>
+
+              {/* Profile Details */}
+              <div className='space-y-4'>
+                {currentUser.bio && (
+                  <div>
+                    <label className='text-sm font-medium text-gray-400'>Bio</label>
+                    <p className='text-white mt-1'>{currentUser.bio}</p>
+                  </div>
+                )}
+
+                <div className='grid grid-cols-2 gap-4'>
+                  {currentUser.nativeLanguage && (
+                    <div>
+                      <label className='text-sm font-medium text-gray-400'>Native Language</label>
+                      <p className='text-white mt-1 flex items-center gap-1'>
+                        <span>🌍</span> {currentUser.nativeLanguage}
+                      </p>
+                    </div>
+                  )}
+
+                  {currentUser.learningLanguage && (
+                    <div>
+                      <label className='text-sm font-medium text-gray-400'>Learning</label>
+                      <p className='text-white mt-1 flex items-center gap-1'>
+                        <span>🎯</span> {currentUser.learningLanguage}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {currentUser.location && (
+                  <div>
+                    <label className='text-sm font-medium text-gray-400'>Location</label>
+                    <p className='text-white mt-1 flex items-center gap-1'>
+                      <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 24 24'>
+                        <path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/>
+                      </svg>
+                      {currentUser.location}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Edit Profile Button */}
+              <button 
+                onClick={() => {
+                  setShowProfileModal(false);
+                  navigate('/onboarding');
+                }}
+                className='w-full mt-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors'
+              >
+                Edit Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
