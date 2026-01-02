@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
@@ -57,6 +59,8 @@ const OnboardingPage = () => {
       
       if (response.data.success) {
         toast.success('Profile completed successfully!');
+        // Invalidate auth query to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['authUser'] });
         navigate('/');
       }
     } catch (error) {

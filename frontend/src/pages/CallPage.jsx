@@ -1,11 +1,30 @@
 import React from 'react'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 const CallPage = () => {
   const navigate = useNavigate();
   const [isMuted, setIsMuted] = useState(true);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [streamToken, setStreamToken] = useState(null);
+
+  useEffect(() => {
+    fetchStreamToken();
+  }, []);
+
+  const fetchStreamToken = async () => {
+    try {
+      const response = await axiosInstance.get('/chat/token');
+      setStreamToken(response.data.token);
+      // TODO: Initialize Stream Video SDK with this token
+      console.log('Stream token:', response.data.token);
+    } catch (error) {
+      console.error('Error fetching stream token:', error);
+      toast.error('Failed to initialize video call');
+    }
+  };
 
   const handleEndCall = () => {
     navigate('/chat');

@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loginData, setLoginData] = useState({
     email: "",
     password: ""
@@ -21,6 +23,9 @@ const LoginPage = () => {
       
       if (response.data.success) {
         toast.success('Login successful!');
+        
+        // Invalidate auth query to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['authUser'] });
         
         // Check if user needs to complete onboarding
         if (!response.data.user.isOnboarded) {

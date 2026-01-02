@@ -36,11 +36,10 @@ const App = () => {
   // }, []);
 
   //Tanstack Query
-  const {data:authData, isLoading, error} = useQuery({
+  const {data:authData, isLoading, error, refetch} = useQuery({
     queryKey:["authUser"],
     queryFn: async() =>{
-      const res = await axiosInstance.get('https://localhost:5001/api/auth/me');
-      // const data = await res.json();
+      const res = await axiosInstance.get('/auth/me');
       return res.data;
     },
     retry: false,

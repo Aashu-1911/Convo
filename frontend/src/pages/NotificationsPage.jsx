@@ -1,39 +1,80 @@
 import React from 'react'
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 const NotificationsPage = () => {
-  // Sample data - replace with actual data from API
-  const [friendRequests, setFriendRequests] = useState([
-    {
-      id: 1,
-      name: "Burak Örkmez",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Burak",
-      nativeLanguage: "Turkish",
-      learningLanguage: "English"
-    }
-  ]);
+  const navigate = useNavigate();
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [acceptedRequests, setAcceptedRequests] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [acceptingRequest, setAcceptingRequest] = useState(null);
 
-  const [newConnections, setNewConnections] = useState([
-    {
-      id: 1,
-      name: "Kyle Doe",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kyle",
-      message: "Kyle Doe accepted your friend request",
-      timestamp: "Recently"
-    }
-  ]);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const currentUser = {
-    name: "Beth Doe",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Beth",
-    online: true
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [userResponse, requestsResponse] = await Promise.all([
+        axiosInstance.get('/auth/me'),
+        axiosInstance.get('/users/friend-requests')
+      ]);
+
+      setCurrentUser(userResponse.data.user);
+      setFriendRequests(requestsResponse.data.incomingRequests);
+      setAcceptedRequests(requestsResponse.data.acceptedRequests);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      } else {
+        toast.error('Failed to load notifications');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleAcceptRequest = (requestId) => {
-    // Add logic to accept friend request
-    setFriendRequests(friendRequests.filter(req => req.id !== requestId));
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      setAcceptingRequest(requestId);
+      await axiosInstance.put(`/users/friend-requests/${requestId}/accept`);
+      toast.success('Friend request accepted!');
+      // Refresh data to update the lists
+      fetchData();
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to accept friend request';
+      toast.error(errorMessage);
+    } finally {
+      setAcceptingRequest(null);
+    }
   };
+
+  const handleLogout = async () => {
+    try {
+      await axiosInstance.post('/auth/logout');
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error) {
+      toast.error('Logout failed');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className='flex h-screen items-center justify-center bg-gray-950'>
+        <div className='text-white text-xl'>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <div className='flex h-screen bg-gray-950 text-white'>
@@ -87,14 +128,14 @@ const NotificationsPage = () => {
           <div className='flex items-center gap-3'>
             <div className='relative'>
               <img 
-                src={currentUser.avatar} 
-                alt={currentUser.name}
+                src={currentUser.profilePic} 
+                alt={currentUser.fullName}
                 className='w-10 h-10 rounded-full'
               />
               <span className='absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-gray-900'></span>
             </div>
             <div className='flex-1'>
-              <p className='font-medium text-sm'>{currentUser.name}</p>
+              <p className='font-medium text-sm'>{currentUser.fullName}</p>
               <p className='text-xs text-emerald-500'>Online</p>
             </div>
           </div>
@@ -117,12 +158,16 @@ const NotificationsPage = () => {
           </button>
           <button className='p-1 hover:bg-gray-800 rounded-lg transition-colors'>
             <img 
-              src={currentUser.avatar} 
+              src={currentUser.profilePic} 
               alt='Profile'
               className='w-7 h-7 rounded-full'
             />
           </button>
-          <button className='p-2 hover:bg-gray-800 rounded-lg transition-colors'>
+          <button 
+            onClick={handleLogout}
+            className='p-2 hover:bg-gray-800 rounded-lg transition-colors'
+            title='Logout'
+          >
             <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
               <path d='M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z'/>
             </svg>
@@ -152,30 +197,33 @@ const NotificationsPage = () => {
                 <p className='text-gray-500 text-sm'>No pending friend requests</p>
               ) : (
                 friendRequests.map(request => (
-                  <div key={request.id} className='flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-4'>
+                  <div key={request._id} className='flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-4'>
                     <div className='flex items-center gap-3'>
                       <img 
-                        src={request.avatar} 
-                        alt={request.name}
+                        src={request.sender.profilePic} 
+                        alt={request.sender.fullName}
                         className='w-12 h-12 rounded-full'
                       />
                       <div>
-                        <h3 className='font-semibold'>{request.name}</h3>
+                        <h3 className='font-semibold'>{request.sender.fullName}</h3>
                         <div className='flex gap-2 mt-1'>
                           <span className='px-2 py-0.5 bg-emerald-500 text-white text-xs rounded-full font-medium'>
-                            Native: {request.nativeLanguage}
+                            Native: {request.sender.nativeLanguage}
                           </span>
-                          <span className='px-2 py-0.5 bg-gray-800 text-white text-xs rounded-full font-medium'>
-                            Learning: {request.learningLanguage}
-                          </span>
+                          {request.sender.learningLanguages && request.sender.learningLanguages[0] && (
+                            <span className='px-2 py-0.5 bg-gray-800 text-white text-xs rounded-full font-medium'>
+                              Learning: {request.sender.learningLanguages[0]}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                     <button 
-                      onClick={() => handleAcceptRequest(request.id)}
-                      className='px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors'
+                      onClick={() => handleAcceptRequest(request._id)}
+                      disabled={acceptingRequest === request._id}
+                      className='px-6 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors'
                     >
-                      Accept
+                      {acceptingRequest === request._id ? 'Accepting...' : 'Accept'}
                     </button>
                   </div>
                 ))
@@ -193,33 +241,36 @@ const NotificationsPage = () => {
             </div>
 
             <div className='space-y-3'>
-              {newConnections.length === 0 ? (
+              {acceptedRequests.length === 0 ? (
                 <p className='text-gray-500 text-sm'>No new connections</p>
               ) : (
-                newConnections.map(connection => (
-                  <div key={connection.id} className='flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-4'>
+                acceptedRequests.map(connection => (
+                  <div key={connection._id} className='flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-4'>
                     <div className='flex items-center gap-3'>
                       <img 
-                        src={connection.avatar} 
-                        alt={connection.name}
+                        src={connection.recipient.profilePic} 
+                        alt={connection.recipient.fullName}
                         className='w-12 h-12 rounded-full'
                       />
                       <div>
-                        <h3 className='font-medium'>{connection.message}</h3>
+                        <h3 className='font-medium'>{connection.recipient.fullName} accepted your friend request</h3>
                         <div className='flex items-center gap-1 mt-1'>
                           <svg className='w-3 h-3 text-gray-400' fill='currentColor' viewBox='0 0 24 24'>
                             <path d='M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/>
                           </svg>
-                          <span className='text-xs text-gray-400'>{connection.timestamp}</span>
+                          <span className='text-xs text-gray-400'>Recently</span>
                         </div>
                       </div>
                     </div>
-                    <button className='px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1'>
+                    <Link 
+                      to='/'
+                      className='px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1'
+                    >
                       <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 24 24'>
                         <path d='M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'/>
                       </svg>
-                      New Friend
-                    </button>
+                      View Friend
+                    </Link>
                   </div>
                 ))
               )}

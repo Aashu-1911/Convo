@@ -1,9 +1,28 @@
 import React from 'react'
 import { useState, useRef, useEffect } from 'react';
+import { axiosInstance } from '../lib/axios';
+import toast from 'react-hot-toast';
 
 const ChatPage = () => {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef(null);
+  const [streamToken, setStreamToken] = useState(null);
+
+  useEffect(() => {
+    fetchStreamToken();
+  }, []);
+
+  const fetchStreamToken = async () => {
+    try {
+      const response = await axiosInstance.get('/chat/token');
+      setStreamToken(response.data.token);
+      // TODO: Initialize Stream Chat SDK with this token
+      console.log('Stream token:', response.data.token);
+    } catch (error) {
+      console.error('Error fetching stream token:', error);
+      toast.error('Failed to initialize chat');
+    }
+  };
 
   // Sample chat data
   const chatInfo = {

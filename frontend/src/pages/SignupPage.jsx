@@ -3,9 +3,11 @@ import {useState} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const SignupPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [signupData, setSignupData] = useState({
     fullName:"",
     email:"",
@@ -29,6 +31,8 @@ const SignupPage = () => {
       
       if (response.data.success) {
         toast.success('Account created successfully!');
+        // Invalidate auth query to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['authUser'] });
         navigate('/onboarding');
       }
     } catch (error) {
