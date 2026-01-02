@@ -1,0 +1,47 @@
+/* Custom Stream Chat Theme */
+.str-chat__theme-dark {
+  --str-chat__primary-color: #10b981;
+  --str-chat__active-primary-color: #059669;
+  --str-chat__surface-color: #111827;
+  --str-chat__secondary-surface-color: #1f2937;
+  --str-chat__primary-surface-color: #374151;
+  --str-chat__primary-surface-color-low-emphasis: #4b5563;
+  --str-chat__border-radius-circle: 9999px;
+  --str-chat__border-radius-md: 0.5rem;
+}
+
+.str-chat__channel-list {
+  background-color: #111827 !important;
+}
+
+.str-chat__channel-preview-messenger--active {
+  background-color: #1f2937 !important;
+}
+
+.str-chat__channel-preview-messenger:hover {
+  background-color: #1f2937 !important;
+}
+
+.str-chat__message-simple {
+  background-color: transparent !important;
+}
+
+.str-chat__message-simple-text-inner {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+.str-chat__message-simple--me .str-chat__message-simple-text-inner {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.str-chat__input-flat {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+.str-chat__input-flat-wrapper {
+  background-color: #111827 !important;
+  border-top: 1px solid #374151 !important;
+}
